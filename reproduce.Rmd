@@ -9,11 +9,11 @@ output: github_document
 
 ```{r packages, message=FALSE, warning=FALSE}
 
-# script to reproduce mss Fig 2. 
+# Script and data to reproduce mss Figure S3 for the MS:
 #
 # Le Guyader,D., C. Ray, D. Brosset, F. Gourmelon.
 # Defining high resolution fishing grounds with Automatic Identification System (AIS)
-# Submitted to ICES Marine Science the xx,cc 2016
+
 
 
 library(sp)

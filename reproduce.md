@@ -1,14 +1,14 @@
-Reproducing the method evaluation
+﻿Reproducing the method evaluation
 ================
 Damien Le Guyader
 2016-07-11
 
 ``` r
-# script to reproduce mss Fig 2. 
+# Script and data to reproduce mss Figure S3 for the MS:
 #
 # Le Guyader,D., C. Ray, D. Brosset, F. Gourmelon.
 # Defining high resolution fishing grounds with Automatic Identification System (AIS)
-# Submitted to ICES Marine Science the xx,cc 2016
+
 
 
 library(sp)
