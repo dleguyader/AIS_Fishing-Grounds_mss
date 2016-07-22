@@ -1,4 +1,4 @@
-Le Guyader **et al.** Supplemantary material
+Le Guyader *et al.* Supplementary material
 ================
 
 Script and data to reproduce mss Figure S3 for the MS:
