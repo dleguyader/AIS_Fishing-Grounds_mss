@@ -7,5 +7,6 @@ Le Guyader,D., C. Ray, D. Brosset, F. Gourmelon.
 Defining high resolution fishing grounds with Automatic Identification System (AIS)
 
 
-Clone or download the repository and run the "reproduce.Rmd" file.   
-Results are shown in the "reproduce.md" file.
+* Clone or download the repository and 
+* Run the "reproduce.Rmd" file.   
+* Results are shown in the "reproduce.md" file.
