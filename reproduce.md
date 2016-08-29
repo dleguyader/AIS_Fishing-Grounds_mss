@@ -1,7 +1,7 @@
-﻿Reproducing the method evaluation
+Reproducing the method evaluation
 ================
 Damien Le Guyader
-2016-07-11
+2016-08-29
 
 ``` r
 # Script and data to reproduce mss Figure S3 for the MS:
@@ -62,7 +62,7 @@ land <- readOGR(dsn = paste0(td, "/data"), layer = "land")
 ```
 
     ## OGR data source with driver: ESRI Shapefile 
-    ## Source: "C:/Users/Damien/Documents/GitHub/AIS_FihingGrounds_mss2/data", layer: "land"
+    ## Source: "C:/Users/Damien/Documents/GitHub/AIS_Fishing-Grounds_mss/data", layer: "land"
     ## with 2617 features
     ## It has 2 fields
 
@@ -75,7 +75,7 @@ sea <- readOGR(dsn = paste0(td, "/data"), layer = "sea")
 ```
 
     ## OGR data source with driver: ESRI Shapefile 
-    ## Source: "C:/Users/Damien/Documents/GitHub/AIS_FihingGrounds_mss2/data", layer: "sea"
+    ## Source: "C:/Users/Damien/Documents/GitHub/AIS_Fishing-Grounds_mss/data", layer: "sea"
     ## with 1 features
     ## It has 1 fields
 
@@ -132,12 +132,6 @@ yclust <- Mclust(pet.pt$vmoy, modelNames = densy$modelName, G = densy$G)
 ## Get classification values
 pet.pt$CLUST <- yclust$classification
 
-## Synthesis 
-# ddply(data.frame(pet.pt), 'CLUST', summarise, min= min(vmoy), max= max(vmoy))
-
-## Quick cluster plot 
-# qplot(vmoy, data = data.frame(pet.pt),
-#       geom = 'density', fill = factor(CLUST), alpha = I(0.8))
 
 ## Set classification (1) for estimated fishing positions and (0) for
 ## estimated non fishing positions given the selected cluster(s)
@@ -149,10 +143,9 @@ fishSet.fun <- function(x, minClus, maxClus) {
   vmin.clust <- min(x$vmoy[x$CLUST == minClus])
   vmax.clust <- max(x$vmoy[x$CLUST == maxClus])
   x$estim <- 0  # transit par défaut
-  x[x$vmoy >= vmin.clust & x$vmoy <= vmax.clust, "estim"] <- 1  # pêche
-  x$act_estim <- "NO"  # transit par défaut
-  # data.frame(df[df$vmoy>=vmin.clust & df$vmoy <=vmax.clust ,])
-  x[x$vmoy >= vmin.clust & x$vmoy <= vmax.clust, "act_estim"] <- "FISH"  # pêche
+  x[x$vmoy >= vmin.clust & x$vmoy <= vmax.clust, "estim"] <- 1  # Fishing
+  x$act_estim <- "NO"  # Steaming (i.e No Fishing)
+  x[x$vmoy >= vmin.clust & x$vmoy <= vmax.clust, "act_estim"] <- "FISH"  # Fishing
   x$act_estim <- factor(x$act_estim)
   return(x)
 }
@@ -264,7 +257,7 @@ fishInt.fun <- function(fishTrip, sea, grid) {
   bif.trip <- raster::mask(bif.trip, sea)
   bif.trip.grid <- as(bif.trip, "SpatialGridDataFrame")
   bif.trip.gt <- getGridTopology(bif.trip.grid)  # Create empty grid
-  tripgrid <- tripGrid(fishTrip, grid = bif.trip.gt, method = "pixellate")  # compute time spent
+  tripgrid <- tripGrid(fishTrip, grid = bif.trip.gt, method = "pixellate")  # compute time spent fishing
   time.t <- raster(tripgrid)
   projection(time.t) <- CRS("+init=epsg:2154")
   time.est <- raster::mask(time.t, sea)
