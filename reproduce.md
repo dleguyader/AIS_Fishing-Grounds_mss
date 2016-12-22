@@ -1,43 +1,51 @@
 Reproducing the method evaluation
 ================
 Damien Le Guyader
-2016-08-29
+2016-12-22
+
+Script and data to reproduce mss Figure S3 for the MS:
+
+-   *Le Guyader,D., C. Ray, F. Gourmelon, D. Brosset.* **Defining high-resolution fishing grounds with Automatic Identification System (AIS) data**
+
+Load requires packages
+----------------------
 
 ``` r
-# Script and data to reproduce mss Figure S3 for the MS:
-#
-# Le Guyader,D., C. Ray, D. Brosset, F. Gourmelon.
-# Defining high resolution fishing grounds with Automatic Identification System (AIS)
+# ipak function from Steven Worthington: install and load multiple R packages.
+# https://gist.github.com/stevenworthington/3178163
+# check to see if packages are installed. Install them if they are not, then load them into the R session.
+
+ipak <- function(pkg){
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg)) 
+        install.packages(new.pkg, dependencies = TRUE)
+    sapply(pkg, require, character.only = TRUE)
+}
 
 
-
-library(sp)
-library(raster)
-library(rasterVis)
-library(rgdal) 
-library(rgeos)
-library(spatstat)
-library(maptools)
-library(SDMTools)
-library(adehabitatLT)
-library(trip)
-library(mclust)
-library(ggplot2)
-library(plyr) 
-library(dplyr)
-library(caret) 
-library(viridis)
-library(grid)
-library(gridExtra)
+packages <- c("sp", "raster", "rasterVis", "rgdal", "rgeos", "spatstat", "maptools", "SDMTools", "adehabitatLT", "trip", "mclust", "ggplot2", "plyr", "dplyr", "caret", "viridis", "grid", "gridExtra")
+ipak(packages)
 ```
+
+    ##           sp       raster    rasterVis        rgdal        rgeos 
+    ##         TRUE         TRUE         TRUE         TRUE         TRUE 
+    ##     spatstat     maptools     SDMTools adehabitatLT         trip 
+    ##         TRUE         TRUE         TRUE         TRUE         TRUE 
+    ##       mclust      ggplot2         plyr        dplyr        caret 
+    ##         TRUE         TRUE         TRUE         TRUE         TRUE 
+    ##      viridis         grid    gridExtra 
+    ##         TRUE         TRUE         TRUE
+
+Analyses and figure
+-------------------
 
 ``` r
 ######################## Parameters #
 
-dtm <- 600  # maximimum duration allowed between 2 positions(in second)
-lhsv <- 47  # grid size: here we use the grid size caculated (in meter)
+dtm <- 600  # maximimum duration allowed between 2 positions(in seconds)
+lhsv <- 47  # grid size: here we use the grid size caculated (in metres)
 # for the 2011-2012 season(see paper for details)
-maille <- 50  # smoothing factor (in meter): idem (see paper for details) 
+maille <- 50  # smoothing factor (in metres): idem (see paper for details) 
 
 
 ######################## Import data #
@@ -52,11 +60,11 @@ pet$time <- as.POSIXct(pet$time, tz = "UTC")  # set time to POSIXct format
 
 
 e <- extent(pet) + 2000
-# Create the clipping polygon à partir des position peche (e: extent)
+## Create the clipping polygon from the AIS data extent (e: extent)
 CP <- as(e, "SpatialPolygons")
 proj4string(CP) <- CRS("+init=epsg:2154")
 
-# get coastline data and clip to data extent
+## Get coastline data and clip to data extent
 
 land <- readOGR(dsn = paste0(td, "/data"), layer = "land")
 ```
@@ -70,7 +78,7 @@ land <- readOGR(dsn = paste0(td, "/data"), layer = "land")
 land <- spTransform(land, CRS("+init=epsg:2154"))
 land <- gIntersection(land, CP, byid = TRUE)
 
-# get sea shape data and clip to data extent
+## Get sea shape data and clip to data extent
 sea <- readOGR(dsn = paste0(td, "/data"), layer = "sea")
 ```
 
@@ -88,10 +96,10 @@ sea <- gIntersection(sea, CP, byid = TRUE)
 
 ## Data cleaning: time filter
 prep.fun <- function(x, dtmax, analyse) {
-  # Fonction to calculate ditance (dist) between consécutive points, time
+  # Fonction to calculate ditance (dist) between consecutive points, time
   # duration (dt), mean speed (vmoy) and deletion according to dtmax x :
   # the SPDF dtmax: maximimum duration allowed between 2 positions(in
-  # second), analyse: name of the metier (character string)
+  # seconds), analyse: name of the metier (character string)
   df <- x
   # conversion to ltraj class
   d.ltraj <- as.ltraj(coordinates(df), df$time, id = paste(analyse))
@@ -142,7 +150,7 @@ fishSet.fun <- function(x, minClus, maxClus) {
   max.clust <- NULL
   vmin.clust <- min(x$vmoy[x$CLUST == minClus])
   vmax.clust <- max(x$vmoy[x$CLUST == maxClus])
-  x$estim <- 0  # transit par défaut
+  x$estim <- 0  # default steaming
   x[x$vmoy >= vmin.clust & x$vmoy <= vmax.clust, "estim"] <- 1  # Fishing
   x$act_estim <- "NO"  # Steaming (i.e No Fishing)
   x[x$vmoy >= vmin.clust & x$vmoy <= vmax.clust, "act_estim"] <- "FISH"  # Fishing
@@ -159,15 +167,15 @@ confMat <- confusionMatrix(table(pet.pt$act_estim, pet.pt$act_obs))  # Confusion
 
 # 2 - Fishing grounds ###############################################
 
-## Data preparation Observed Values
+## Data preparation for observed fishing positions
 val.obs <- subset(data.frame(pet.pt), select = c(coords.x, coords.y, time, id, obs))
 names(val.obs) <- c("x", "y", "date", "id", "statut")
 
-# Estimated Values
+## Data preparation for estimated fishing positions
 val.est <- subset(data.frame(pet.pt), select = c(coords.x, coords.y, time, id, estim))
 names(val.est) <- c("x", "y", "date", "id", "statut")
 
-# Preparation for trip format coercion
+## Preparation for trip format coercion
 fun.group <- function(x) {
   x %>% arrange(id, date) %>% 
     mutate(gap = c(0, (diff(statut) != 0) * 1)) %>% 
@@ -182,28 +190,29 @@ val.obs$id <- paste(val.obs$mmsi, as.integer(as.Date(val.obs$date)), val.obs$gro
 val.est$mmsi <- val.est$id
 val.est$id <- paste(val.est$mmsi, as.integer(as.Date(val.est$date)), val.est$group, sep = "_")
 
+## Get only fishing positions
 val.obs <- val.obs %>%
-  filter(statut == 1) %>% # get only fishing positions
+  filter(statut == 1) %>%
   dplyr::select(x,y,date,id)  
 
 val.est <- val.est %>% 
   filter(statut == 1) %>%   
   dplyr::select(x,y,date,id)
 
-# Trip format calculation
+## Trip format calculation
 lenst.obs <- tapply(val.obs$id, val.obs$id, length)
-# delete non-consecutives fishing positions
+## Delete non-consecutives fishing positions
 val.obs <- val.obs[val.obs$id %in% names(lenst.obs)[lenst.obs > 2], ]
 
 lenst.est <- tapply(val.est$id, val.est$id, length)
 val.est <- val.est[val.est$id %in% names(lenst.est)[lenst.est > 2], ]
 
-# Observed fishing positions to trip format
+## Observed fishing positions to trip format
 coordinates(val.obs) <- ~x + y
 proj4string(val.obs) <- CRS("+init=epsg:2154")
 trip.obs <- trip(val.obs, c("date", "id"))
 
-# Estimated fishing positions to trip format
+## Estimated fishing positions to trip format
 coordinates(val.est) <- ~x + y
 proj4string(val.est) <- CRS("+init=epsg:2154")
 trip.est <- trip(val.est, c("date", "id"))
@@ -238,7 +247,7 @@ fishGround.fun <- function(fishTrip, sea, grid, h) {
   return(dk.obs)
 }
 
-## Computation
+## Computation of KDE line density
 pet.dk.obs <- fishGround.fun(fishTrip = pet.obs, sea = sea, grid = maille, h = lhsv)
 pet.dk.est <- fishGround.fun(fishTrip = pet.est, sea = sea, grid = maille, h = lhsv)
 
@@ -246,7 +255,7 @@ pet.dk.est <- fishGround.fun(fishTrip = pet.est, sea = sea, grid = maille, h = l
 # 3 Fishing Intensity ################################
 
 
-## Function to compute fishing time spent
+## Function to compute the total fishing time spent per surface unit
 fishInt.fun <- function(fishTrip, sea, grid) {
   # fishTrip : fishing positions coerced to trip format sea: sea clip to
   # extent of data grid size: see the paper
@@ -264,7 +273,7 @@ fishInt.fun <- function(fishTrip, sea, grid) {
   return(time.est)
 }
 
-# Calculation
+## Calculation of the total fishing time spent per surface unit
 pet.time.obs <- fishInt.fun (fishTrip = pet.obs, sea = sea, grid = maille)
 pet.time.est <- fishInt.fun (fishTrip = pet.est, sea = sea, grid = maille)
 
@@ -272,7 +281,7 @@ pet.time.est <- fishInt.fun (fishTrip = pet.est, sea = sea, grid = maille)
 
 #  4- Warren's similarity index ###############################
 
-# Function
+## Function
 evalMeth.fun <- function(x, y) {
   # x and y are rasters obs and estim
   asc.est <- asc.from.raster(x)
@@ -285,7 +294,7 @@ evalMeth.fun <- function(x, y) {
   print(I)
 }
 
-# Get Values
+## Get Values
 pet.ground.eval <- evalMeth.fun (pet.dk.obs, pet.dk.est)
 ```
 

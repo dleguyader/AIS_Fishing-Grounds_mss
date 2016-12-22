@@ -3,7 +3,7 @@ Le Guyader *et al.* Supplementary material
 
 Script and data to reproduce mss Figure S3 for the MS:
 
-Le Guyader,D., C. Ray, D. Brosset, F. Gourmelon.
+Le Guyader,D., C. Ray, , F. Gourmelon, D. Brosset.
 Defining high resolution fishing grounds with Automatic Identification System (AIS)
 
 
